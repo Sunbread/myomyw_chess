@@ -66,8 +66,8 @@ pub fn count_snake(board: &Chessboard) -> Vec<Snake> {
                 begin = (board.chessboard[r][c], c);
                 while c < N && board.chessboard[r][c] != Chess::Void {
                     if ((c - begin.1) % 2 == 0) ^ (board.chessboard[r][c] == begin.0) {
-                        begin = (board.chessboard[r][c], c);
                         snake_rows.push((r, begin.0, board.chessboard[r][c - 1], begin.1, c - 1));
+                        begin = (board.chessboard[r][c], c);
                     }
                     c += 1;
                 }
@@ -87,8 +87,8 @@ pub fn count_snake(board: &Chessboard) -> Vec<Snake> {
                 begin = (board.chessboard[r][c], r);
                 while r < N && board.chessboard[r][c] != Chess::Void {
                     if ((r - begin.1) % 2 == 0) ^ (board.chessboard[r][c] == begin.0) {
-                        begin = (board.chessboard[r][c], r);
                         snake_columns.push((c, begin.0, board.chessboard[r - 1][c], begin.1, r - 1));
+                        begin = (board.chessboard[r][c], r);
                     }
                     r += 1;
                 }
