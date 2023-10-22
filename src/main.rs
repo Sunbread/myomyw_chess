@@ -5,7 +5,7 @@ mod mcts;
 
 fn main() {
     println!("Make Your Opponent Make You WIN! Chess");
-    println!("version 0.2.1 made by Sunbread");
+    println!("version 0.2.2 made by Sunbread");
     println!();
     rules();
     println!();
