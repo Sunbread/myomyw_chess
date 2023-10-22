@@ -1,70 +1,44 @@
+use crate::chess::{Operation, Status, Turn};
+
 mod chess;
+mod mcts;
 
 fn main() {
     println!("Make Your Opponent Make You WIN! Chess");
-    println!("version 0.1pre1 made by Sunbread");
+    println!("version 0.2.0 made by Sunbread");
     println!();
     rules();
     println!();
+    let mut ai = false;
     loop {
-        println!("输入 begin 开始");
+        println!("输入 begin 开始，ai 进入 AI 对战");
         let mut line = String::new();
         std::io::stdin().read_line(&mut line).unwrap();
-        if line.to_lowercase().trim() == "begin" {
-            break;
+        match line.to_lowercase().trim() {
+            "begin" => {
+                break;
+            }
+            "ai" => {
+                ai = true;
+                break;
+            }
+            _ => {}
         }
     }
     let mut board = chess::Chessboard::new();
     loop {
+        println!();
         println!("{}", board);
         match board.check() {
-            chess::Status::Free(turn) => {
+            Status::Free(turn) => {
                 println!("轮到 {} 走棋", turn);
-                let location;
-                let operation;
-                loop {
-                    println!("输入坐标 [1-6] [1-6]");
-                    let mut line = String::new();
-                    std::io::stdin().read_line(&mut line).unwrap();
-                    let subs: Vec<_> = line.trim().split_ascii_whitespace().map(String::from).collect();
-                    if subs.len() != 2 {
-                        println!("输入错误！");
-                        continue;
-                    }
-                    let mut loc = [0; 2];
-                    for (i, sub) in subs.iter().enumerate() {
-                        loc[i] = match sub.parse::<i32>() {
-                            Ok(pos) => pos,
-                            Err(_) => {
-                                println!("输入错误！");
-                                continue;
-                            }
-                        };
-                    }
-                    if loc[0] < 1 || loc[0] > 6 || loc[1] < 1 || loc[1] > 6 {
-                        println!("输入错误！");
-                        continue;
-                    }
-                    location = (loc[0] - 1, loc[1] - 1);
-                    break;
-                }
-                loop {
-                    println!("输入 U 向上 D 向下 L 向左 R 向右");
-                    let mut line = String::new();
-                    std::io::stdin().read_line(&mut line).unwrap();
-                    match line.to_lowercase().trim() {
-                        "u" => operation = chess::Operation::Up,
-                        "d" => operation = chess::Operation::Down,
-                        "l" => operation = chess::Operation::Left,
-                        "r" => operation = chess::Operation::Right,
-                        _ => {
-                            println!("输入错误！");
-                            continue;
-                        }
-                    }
-                    break;
-                }
-                board = match board.next(location.0, location.1, operation) {
+                let (r, c, op) = if ai && matches!(board.check(), Status::Free(Turn::B)) {
+                    println!("AI 计算中");
+                    mcts::search(&board)
+                } else {
+                    read_loc()
+                };
+                board = match board.next(r, c, op) {
                     Ok(board) => board,
                     Err(chess::Errors::OutOfBound) => {
                         println!("棋子出界！");
@@ -80,7 +54,7 @@ fn main() {
                     }
                 };
             }
-            chess::Status::Win(turn) => {
+            Status::Win(turn) => {
                 println!("{} 获胜", turn);
                 return;
             }
@@ -88,9 +62,58 @@ fn main() {
     }
 }
 
+/// (r, c, op)
+fn read_loc() -> (i32, i32, Operation) {
+    let location;
+    let operation;
+    loop {
+        println!("输入坐标 行[1-{0}] 列[1-{0}]", chess::N);
+        let mut line = String::new();
+        std::io::stdin().read_line(&mut line).unwrap();
+        let subs: Vec<_> = line.trim().split_ascii_whitespace().map(String::from).collect();
+        if subs.len() != 2 {
+            println!("输入错误！");
+            continue;
+        }
+        let mut loc = [0; 2];
+        for (i, sub) in subs.iter().enumerate() {
+            loc[i] = match sub.parse::<i32>() {
+                Ok(pos) => pos,
+                Err(_) => {
+                    println!("输入错误！");
+                    continue;
+                }
+            };
+        }
+        if loc[0] < 1 || loc[0] > chess::N as i32 || loc[1] < 1 || loc[1] > chess::N as i32 {
+            println!("输入错误！");
+            continue;
+        }
+        location = (loc[0] - 1, loc[1] - 1);
+        break;
+    }
+    loop {
+        println!("输入 U 向上 D 向下 L 向左 R 向右");
+        let mut line = String::new();
+        std::io::stdin().read_line(&mut line).unwrap();
+        match line.to_lowercase().trim() {
+            "u" => operation = Operation::Up,
+            "d" => operation = Operation::Down,
+            "l" => operation = Operation::Left,
+            "r" => operation = Operation::Right,
+            _ => {
+                println!("输入错误！");
+                continue;
+            }
+        }
+        break;
+    }
+    (location.0, location.1, operation)
+}
+
 fn rules() {
     println!("规则：");
-    println!("1、棋盘6x6，开局时双方有5个棋子，分别在左上和右下角");
+    println!("1、棋盘{0}x{0}，开局时双方有5个棋子，分别在左上和右下角", chess::N);
     println!("2、双方交替移动棋子，一次只能沿横竖方向移动一格");
     println!("3、胜负条件是【让对方翻转掉自己的所有棋子】");
     println!("4、在一个方向上一串交替的棋子被称为蛇（snake），如：ABA、ABABA");

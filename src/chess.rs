@@ -5,25 +5,28 @@ use crate::chess::rules::{count_cross, count_snake, Tense};
 
 pub mod rules;
 
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub const N: usize = 6;
+
+#[derive(Hash, Clone, Copy, Debug, PartialEq, Eq)]
 pub enum Chess {
     A,
     B,
     Void,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Hash, Clone, Debug)]
 pub struct Chessboard {
-    chessboard: [[Chess; 6]; 6],
+    chessboard: [[Chess; N]; N],
     next_turn: Turn,
 }
 
-#[derive(Clone, Debug)]
+#[derive(Hash, Clone, Debug, PartialEq, Eq)]
 pub enum Turn {
     A,
     B,
 }
 
+#[derive(Clone, Debug)]
 pub enum Operation {
     Up,
     Down,
@@ -31,6 +34,7 @@ pub enum Operation {
     Right,
 }
 
+#[derive(Clone, Debug)]
 pub enum Status {
     Win(Turn),
     Free(Turn),
@@ -75,18 +79,18 @@ impl Display for Chessboard {
 
 impl Chessboard {
     pub fn new() -> Chessboard {
-        let mut board = [[Chess::Void; 6]; 6];
+        let mut board = [[Chess::Void; N]; N];
         // place chess
         board[2][0] = Chess::A;
         board[1][0] = Chess::A;
         board[0][0] = Chess::A;
         board[0][1] = Chess::A;
         board[0][2] = Chess::A;
-        board[3][5] = Chess::B;
-        board[4][5] = Chess::B;
-        board[5][5] = Chess::B;
-        board[5][4] = Chess::B;
-        board[5][3] = Chess::B;
+        board[N - 3][N - 1] = Chess::B;
+        board[N - 2][N - 1] = Chess::B;
+        board[N - 1][N - 1] = Chess::B;
+        board[N - 1][N - 2] = Chess::B;
+        board[N - 1][N - 3] = Chess::B;
         Chessboard {
             chessboard: board,
             next_turn: Turn::A,
@@ -99,7 +103,7 @@ impl Chessboard {
             Operation::Left => (r, c - 1),
             Operation::Right => (r, c + 1),
         };
-        if !(0..6).contains(&r) || !(0..6).contains(&c) || !(0..6).contains(&dest.0) || !(0..6).contains(&dest.1) {
+        if !(0..N as i32).contains(&r) || !(0..N as i32).contains(&c) || !(0..N as i32).contains(&dest.0) || !(0..N as i32).contains(&dest.1) {
             return Err(Errors::OutOfBound);
         };
         let orig = (r as usize, c as usize);
@@ -138,6 +142,46 @@ impl Chessboard {
             (x, 0) if x > 0 => Status::Win(Turn::B),
             _ => Status::Free(self.next_turn.clone()),
         }
+    }
+    pub fn available(&self) -> Vec<(i32, i32, Operation)> {
+        let mut result = Vec::new();
+        for r in 0..N {
+            for c in 0..N {
+                if self.chessboard[r][c] != match self.next_turn {
+                    Turn::A => Chess::A,
+                    Turn::B => Chess::B,
+                } {
+                    continue;
+                }
+                if (1..N).contains(&r) && self.chessboard[r - 1][c] == Chess::Void {
+                    result.push((r as i32, c as i32, Operation::Up));
+                }
+                if (0..N - 1).contains(&r) && self.chessboard[r + 1][c] == Chess::Void {
+                    result.push((r as i32, c as i32, Operation::Down));
+                }
+                if (1..N).contains(&c) && self.chessboard[r][c - 1] == Chess::Void {
+                    result.push((r as i32, c as i32, Operation::Left));
+                }
+                if (0..N - 1).contains(&c) && self.chessboard[r][c + 1] == Chess::Void {
+                    result.push((r as i32, c as i32, Operation::Right));
+                }
+            }
+        }
+        result
+    }
+    pub fn state(&self) -> (i32, i32) {
+        let mut num_a = 0;
+        let mut num_b = 0;
+        for row in self.chessboard {
+            for chess in row {
+                match chess {
+                    Chess::A => num_a += 1,
+                    Chess::B => num_b += 1,
+                    Chess::Void => (),
+                }
+            }
+        }
+        (num_a, num_b)
     }
 }
 

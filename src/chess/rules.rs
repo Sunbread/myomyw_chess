@@ -1,6 +1,6 @@
 use reunion::{UnionFind, UnionFindTrait};
 
-use crate::chess::{Chess, Chessboard};
+use crate::chess::{Chess, Chessboard, N};
 
 #[derive(Hash, Clone, Debug, PartialEq, Eq)]
 pub struct Snake {
@@ -58,13 +58,13 @@ pub fn count_snake(board: &Chessboard) -> Vec<Snake> {
     let mut snakes = vec![];
     // by row
     let mut snake_rows = vec![];
-    for r in 0..6 {
+    for r in 0..N {
         let mut begin: (Chess, usize);
         let mut c = 0;
-        while c < 6 {
+        while c < N {
             if board.chessboard[r][c] != Chess::Void {
                 begin = (board.chessboard[r][c], c);
-                while c < 6 && board.chessboard[r][c] != Chess::Void {
+                while c < N && board.chessboard[r][c] != Chess::Void {
                     if ((c - begin.1) % 2 == 0) ^ (board.chessboard[r][c] == begin.0) {
                         begin = (board.chessboard[r][c], c);
                         snake_rows.push((r, begin.0, board.chessboard[r][c - 1], begin.1, c - 1));
@@ -79,13 +79,13 @@ pub fn count_snake(board: &Chessboard) -> Vec<Snake> {
     }
     // by column
     let mut snake_columns = vec![];
-    for c in 0..6 {
+    for c in 0..N {
         let mut begin: (Chess, usize);
         let mut r = 0;
-        while r < 6 {
+        while r < N {
             if board.chessboard[r][c] != Chess::Void {
                 begin = (board.chessboard[r][c], r);
-                while r < 6 && board.chessboard[r][c] != Chess::Void {
+                while r < N && board.chessboard[r][c] != Chess::Void {
                     if ((r - begin.1) % 2 == 0) ^ (board.chessboard[r][c] == begin.0) {
                         begin = (board.chessboard[r][c], r);
                         snake_columns.push((c, begin.0, board.chessboard[r - 1][c], begin.1, r - 1));
@@ -148,7 +148,7 @@ pub fn count_cross(snakes: &Vec<Snake>) -> Vec<Cross> {
         less = vertical;
         more = horizontal;
     }
-    let mut buckets = vec![vec![]; 6];
+    let mut buckets = vec![vec![]; N];
     for snake in less {
         buckets[snake.index].push(snake);
     }
