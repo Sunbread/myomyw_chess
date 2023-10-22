@@ -16,21 +16,7 @@ fn main() {
                 println!("轮到 {} 走棋", turn);
                 println!("AI 计算中");
                 let (r, c, op) = mcts::search(&board, &turn);
-                board = match board.next(r, c, op) {
-                    Ok(board) => board,
-                    Err(chess::Errors::OutOfBound) => {
-                        println!("棋子出界！");
-                        continue;
-                    }
-                    Err(chess::Errors::WrongTurn) => {
-                        println!("请选择己方棋子！");
-                        continue;
-                    }
-                    Err(chess::Errors::Stuck) => {
-                        println!("目标有子！");
-                        continue;
-                    }
-                };
+                board = board.next(r, c, op).unwrap();
             }
             Status::Win(turn) => {
                 println!("{} 获胜", turn);
