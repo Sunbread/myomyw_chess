@@ -5,11 +5,11 @@ mod mcts;
 
 fn main() {
     println!("Make Your Opponent Make You WIN! Chess");
-    println!("version 0.2.0 made by Sunbread");
+    println!("version 0.2.1 made by Sunbread");
     println!();
     rules();
     println!();
-    let mut ai = false;
+    let mut ai = None;
     loop {
         println!("输入 begin 开始，ai 进入 AI 对战");
         let mut line = String::new();
@@ -19,12 +19,20 @@ fn main() {
                 break;
             }
             "ai" => {
-                ai = true;
+                println!("请选择AI先后手 A 先手 B 后手");
+                let mut line = String::new();
+                std::io::stdin().read_line(&mut line).unwrap();
+                match line.to_lowercase().trim() {
+                    "a" => ai = Some(Turn::A),
+                    "b" => ai = Some(Turn::B),
+                    _ => continue,
+                }
                 break;
             }
             _ => {}
         }
     }
+    let ai = ai;
     let mut board = chess::Chessboard::new();
     loop {
         println!();
@@ -32,9 +40,9 @@ fn main() {
         match board.check() {
             Status::Free(turn) => {
                 println!("轮到 {} 走棋", turn);
-                let (r, c, op) = if ai && matches!(board.check(), Status::Free(Turn::B)) {
+                let (r, c, op) = if matches!((ai.clone(), board.check()), (Some(turn1), Status::Free(turn2)) if turn1 == turn2) {
                     println!("AI 计算中");
-                    mcts::search(&board)
+                    mcts::search(&board, &ai.clone().unwrap())
                 } else {
                     read_loc()
                 };

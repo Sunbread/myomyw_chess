@@ -7,8 +7,6 @@ use mcts::tree_policy::UCTPolicy;
 
 use crate::chess::{Chessboard, Operation, Status, Turn};
 
-const COMPUTER: Turn = Turn::B;
-
 #[derive(Clone)]
 struct ChessGame {
     board: Chessboard,
@@ -58,7 +56,15 @@ enum StateEval {
     Eval(i32),
 }
 
-struct ChessEvaluator;
+struct ChessEvaluator {
+    computer: Turn,
+}
+
+impl ChessEvaluator {
+    fn new(computer: &Turn) -> ChessEvaluator {
+        ChessEvaluator { computer: computer.clone() }
+    }
+}
 
 impl Evaluator<ChessMCTS> for ChessEvaluator {
     type StateEvaluation = StateEval;
@@ -68,7 +74,7 @@ impl Evaluator<ChessMCTS> for ChessEvaluator {
             Status::Win(who) => (vec![(); moves.len()], StateEval::Win(who)),
             Status::Free(_) => {
                 let (num_a, num_b) = state.board.state();
-                let (num_comp, num_player) = match COMPUTER {
+                let (num_comp, num_player) = match self.computer {
                     Turn::A => (num_a, num_b),
                     Turn::B => (num_b, num_a),
                 };
@@ -82,12 +88,9 @@ impl Evaluator<ChessMCTS> for ChessEvaluator {
     }
 
     fn interpret_evaluation_for_player(&self, evaluation: &Self::StateEvaluation, player: &Player<ChessMCTS>) -> i64 {
-        let factor = match *player.as_ref().unwrap() {
-            COMPUTER => 1,
-            _ => -1,
-        };
+        let factor = if *player.as_ref().unwrap() == self.computer { 1 } else { -1 };
         let eval = match evaluation {
-            StateEval::Win(_) => 1e10 as i64,
+            StateEval::Win(_) => 1e9 as i64,
             StateEval::Eval(x) => *x as i64,
         };
         factor * eval
@@ -110,9 +113,9 @@ impl MCTS for ChessMCTS {
     }
 }
 
-pub fn search(board: &Chessboard) -> (i32, i32, Operation) {
+pub fn search(board: &Chessboard, computer: &Turn) -> (i32, i32, Operation) {
     let game = ChessGame::from(board.clone());
-    let mut mcts = MCTSManager::new(game, ChessMCTS, ChessEvaluator, UCTPolicy::new(1. / 1_f64.sqrt()), ApproxTable::new(1048576));
+    let mut mcts = MCTSManager::new(game, ChessMCTS, ChessEvaluator::new(computer), UCTPolicy::new(2_f64.sqrt()), ApproxTable::new(1048576));
     mcts.playout_n_parallel(1e6 as u32, 16);
     mcts.best_move().unwrap()
 }
