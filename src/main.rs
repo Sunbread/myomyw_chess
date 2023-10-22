@@ -5,7 +5,7 @@ mod mcts;
 
 fn main() {
     println!("Make Your Opponent Make You WIN! Chess");
-    println!("version 0.2.1 AI-mode made by Sunbread");
+    println!("version 0.2.2 AI-mode made by Sunbread");
     println!();
     let mut board = chess::Chessboard::new();
     loop {
